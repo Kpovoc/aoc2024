@@ -1,15 +1,6 @@
 (ns day01.core
   (:require [clojure.string :as string]))
 
-(defn distance-diff [l1 l2]
-  (let [sorted-l1 (sort l1)
-        sorted-l2 (sort l2)]
-    (reduce +
-            (map #(Math/abs ^int %)
-                 (map -
-                      sorted-l1
-                      sorted-l2)))))
-
 (defn line-to-num-pair [line]
   (map #(Integer/parseInt %) (string/split line #"   ")))
 
@@ -25,11 +16,26 @@
 (defn read-in-lists [filename]
   (line-list-to-num-lists (string/split-lines (slurp filename))))
 
-(defn calc-prob-1 [filename]
-  (let [vs (read-in-lists filename)
-        v1 (first vs)
-        v2 (second vs)]
-    (distance-diff v1 v2)))
+(defn distance-diff [v1 v2]
+  (let [sorted-v1 (sort v1)
+        sorted-v2 (sort v2)]
+    (reduce +
+            (map #(Math/abs ^int %)
+                 (map -
+                      sorted-v1
+                      sorted-v2)))))
+
+(defn get-freq-value [n freq]
+  (let [v (freq n)]
+    (if (nil? v) 0 v)))
+
+(defn similarity-score [v1 v2]
+  (let [freq (frequencies v2)]
+    (reduce + (map #(* % (get-freq-value % freq)) v1))))
 
 (defn -main []
-  (println (calc-prob-1 "data/day01")))
+  (let [vs (read-in-lists "data/day01")
+        v1 (first vs)
+        v2 (second vs)]
+    (println (distance-diff v1 v2))
+    (println (similarity-score v1 v2))))
