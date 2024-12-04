@@ -1,6 +1,8 @@
 (ns day03.core)
 
-(def mul-fn "mul(")
+(def ul-fn "ul(")
+(def o-fn "o()")
+(def ont-fn "on't()")
 (def max-num-size 3)
 
 (defn is-num? [c]
@@ -45,33 +47,66 @@
           {:num 0 :s (subs s 1)}
           {:num (* num1 num2) :s (:s resp2)})))))
 
-(defn parse-mult-func [s]
-  (loop [mul mul-fn
-         rs s
-         nums []]
+(defn parse-mult-func
+  "Assumes the m was already found"
+  [s]
+  (loop [mul ul-fn
+         rs s]
     (cond
       (empty? rs)
-      (reduce + nums)
+      {:num 0 :s rs}
 
       :else
       (let [c (first rs)
             vc (first mul)]
         (cond
           (not= c vc)
-          (if (= (count mul) 4)
-            (recur mul-fn (subs rs 1) nums)
-            (recur mul-fn rs nums))
+          {:num 0 :s s}
 
           :else
           (if (= (count mul) 1)
-            (let [res (mult-args (subs rs 1))]
-              (recur mul-fn (:s res) (conj nums (:num res))))
-            (recur (subs mul 1) (subs rs 1) nums)))))))
+            (mult-args (subs rs 1))
+            (recur (subs mul 1) (subs rs 1))))))))
 
-; count 0, then c is 0-9
-; count 1, then c is 0-9 or ,
-; count 2, then c is 0-9 or ,
-; count 3, then c is ,
+(defn parse-do-funcs
+  "Assumes the d was already found"
+  [s do?]
+  (cond
+    (empty? s)
+    {:do? do? :s s}
+
+    (and (>= (count s) 3) (= (subs s 0 3) o-fn))
+    {:do? true :s s}
+
+    (and (>= (count s) 6) (= (subs s 0 6) ont-fn))
+    {:do? false :s s}
+
+    :else
+    {:do? do? :s s}))
+
+(defn parse-for-funcs [s]
+  (loop [rs s
+         do? true
+         nums []]
+    (cond
+      (empty? rs)
+      (reduce + nums)
+
+      :else
+      (let [c (first rs)]
+        (cond
+          (and (= c \m) do?)
+          (let [res (parse-mult-func (subs rs 1))
+                num (:num res)]
+            (if (= num 0)
+              (recur (:s res) do? nums)
+              (recur (:s res) do? (conj nums num))))
+
+          (= c \d)
+          (let [res (parse-do-funcs (subs rs 1) do?)]
+            (recur (:s res) (:do? res) nums))
+          :else
+          (recur (subs rs 1) do? nums))))))
 
 (defn -main []
-  (println (parse-mult-func (slurp "data/day03"))))
+  (println (parse-for-funcs (slurp "data/day03"))))
